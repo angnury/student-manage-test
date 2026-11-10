@@ -53,7 +53,11 @@ def _login_by_role(role: str) -> str:
         json={"username": account["username"], "password": account["password"]},
         timeout=10,
     )
-    assert resp.status_code == 200, f"{role} 登录失败：HTTP {resp.status_code} {resp.text[:200]}"
+    assert resp.status_code == 200, (
+        f"{role} 登录失败：HTTP {resp.status_code} {resp.text[:200]}\n"
+        f"请检查 config/config.yaml 里 {role} 的账号密码（当前 username={account['username']}），"
+        f"以及被测系统是否已启动：{ENV['base_url']}"
+    )
     body = resp.json()
     assert body.get("code") == 200, f"{role} 登录失败：{body}"
     return body["data"]["token"]
