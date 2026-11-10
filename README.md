@@ -14,7 +14,7 @@
 |---|---|
 | 测试框架 | pytest 8 |
 | 接口测试 | requests + YAML 数据驱动 |
-| UI 测试 | Selenium 4 + Page Object |
+| UI 测试 | Selenium 4 + Page Object（Edge / Chrome） |
 | 数据校验 | pymysql（直连库核对落库结果） |
 | 报告 | Allure 2 |
 | 持续集成 | GitHub Actions（每日定时回归，报告发布 GitHub Pages） |
@@ -68,6 +68,36 @@ docs/         用例库、测试报告、缺陷清单
 | `test_permission.py` | 无 token / 伪造 token / 三种角色越权矩阵 | 8 |
 | `test_score.py` | 总分计算、防改分、必填校验、分数越界 | 5 |
 | `test_statistics.py` | 概览、分数分布、班级平均分 | 3 |
+
+### UI 自动化（7 条）
+
+| 文件 | 覆盖点 | 用例数 |
+|---|---|---|
+| `test_login_ui.py` | 登录成功跳转 + 顶栏用户名、密码错误提示 | 2 |
+| `test_student_ui.py` | 列表加载与总数、按学号搜索、重置搜索、新增学生、学号重复提示 | 5 |
+
+运行前提：后端 8080 与前端 dev（vite 5173）都要启动。
+
+```bash
+# 终端 1：后端
+cd D:/deepseek/student-manage-web/student-web/student-web
+mvnw spring-boot:run
+
+# 终端 2：前端
+cd D:/deepseek/student-manage-frontend
+npm run dev
+
+# 终端 3：跑 UI 用例
+pytest testcases/ui                 # 默认无头 Edge
+set UI_HEADLESS=0 && pytest testcases/ui   # 有头模式，调试用
+```
+
+**定位约定**：所有元素用 `data-testid`，不依赖 class / 文案 / DOM 层级（页面里同一个
+`placeholder="请输入学号"` 同时出现在搜索栏和新增弹窗，用文案定位必然出错）。
+
+**驱动说明**：项目会把浏览器驱动放在 `drivers/msedgedriver.exe`（已在 .gitignore 中）。
+没有这个文件时 Selenium 会自动下载；下载失败可手动下载后放到该目录，
+或用环境变量 `UI_DRIVER_PATH` 指定路径。驱动版本必须与浏览器大版本一致。
 
 ## 测试执行结论
 
