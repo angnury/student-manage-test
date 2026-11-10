@@ -66,6 +66,28 @@ jobs:
           mkdir -p allure-results
           pytest testcases/api -p no:cacheprovider
 
+      - name: 执行 UI 测试
+        # 接口用例失败也要跑 UI：两类用例的问题不一样，需要各自暴露
+        if: always()
+        env:
+          TEST_ENV: prod
+          UI_BASE_URL: "http://47.98.192.161"
+          UI_BROWSER: chrome
+          UI_HEADLESS: "1"
+        run: |
+          mkdir -p allure-results screenshots
+          # 与接口用例共用 allure-results，最终合并成一份报告
+          pytest testcases/ui -p no:cacheprovider
+
+      - name: 上传 UI 失败截图
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screenshots
+          path: screenshots
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: 安装 Allure 并生成报告
         if: always()
         run: |
