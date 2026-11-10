@@ -80,8 +80,11 @@ docs/         用例库、测试报告、缺陷清单
 
 ## 用例执行报告
 
-<!-- 流水线首次跑通后替换为真实地址 -->
-Allure 报告：`https://angnury.github.io/student-manage-test/`
+**https://angnury.github.io/student-manage-test/**
+
+最近一次 CI 运行：**38 条用例 / 35 passed / 3 skipped / 0 failed**
+
+> 3 条 skipped 是依赖数据库直连的落库校验——线上库的 3306 未对外开放，CI 环境无法连接，本地运行时这 3 条会正常执行。
 
 ## 说明
 
