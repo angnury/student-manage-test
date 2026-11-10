@@ -112,7 +112,8 @@ set UI_HEADLESS=0 && pytest testcases/ui   # 有头模式，调试用
 
 **https://angnury.github.io/student-manage-test/**
 
-CI 每次运行会先跑接口用例（38 条），再跑 UI 用例（7 条），两份结果合并成一份 Allure 报告。
+最近一次 CI 运行：**45 条用例 / 42 passed / 3 skipped / 0 failed**
+（接口 38 条 + UI 7 条，合并为一份 Allure 报告）
 
 > 3 条接口用例在 CI 中会 skip：它们是依赖数据库直连的落库校验，线上库的 3306 未对外开放。本地运行时这 3 条正常执行。
 
