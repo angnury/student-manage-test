@@ -1,0 +1,31 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# ---- 测试产物 ----
+allure-results/
+allure-report/
+logs/
+screenshots/
+*.log
+
+# ---- 本地配置（含账号密码，禁止入库）----
+config/config.yaml
+
+# ---- 内部文档（含演示账号与环境信息，暂不入库）----
+测试工程实施计划.md
+docs/内部*
+
+# ---- IDE ----
+.idea/
+.vscode/
+*.iml
+
+# ---- OS ----
+.DS_Store
+Thumbs.db

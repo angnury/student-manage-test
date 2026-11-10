@@ -1,0 +1,62 @@
+# student-manage-test
+
+对个人项目 [student-manage-web](https://github.com/angnury/student-manage-web) 的**接口自动化 + UI 自动化测试工程**。
+
+被测系统是一套前后端分离的学生综合信息管理系统（Spring Boot 3 + Vue 3 + MySQL），本仓库只做测试，不含业务代码。
+
+## 技术栈
+
+| 层 | 选型 |
+|---|---|
+| 测试框架 | pytest 8 |
+| 接口测试 | requests + YAML 数据驱动 |
+| UI 测试 | Selenium 4 + Page Object |
+| 数据校验 | pymysql（直连库核对落库结果） |
+| 报告 | Allure 2 |
+| 持续集成 | GitHub Actions（每日定时回归，报告发布 GitHub Pages） |
+| 性能 | JMeter 阶梯加压 |
+
+## 快速开始
+
+```bash
+# 1. 安装依赖
+pip install -r requirements.txt
+
+# 2. 复制并修改配置
+cp config/config.example.yaml config/config.yaml
+
+# 3. 运行接口用例
+pytest testcases/api -v
+
+# 4. 生成并查看报告
+allure serve allure-results
+```
+
+> 被测系统需先启动在 `http://localhost:8080`，或把 `config/config.yaml` 里的 `base_url` 指向已部署环境。
+
+## 目录结构
+
+```
+api/          接口封装层，每个模块一个类
+data/         YAML 数据驱动用例数据
+pages/        UI 自动化 Page Object
+testcases/    用例本体（api / ui 两类）
+utils/        数据库、断言、日志等工具
+config/       多环境配置（真实配置不入库）
+docs/         用例库、测试报告、缺陷清单
+```
+
+## 测试范围
+
+覆盖 6 个模块：登录鉴权、学生管理 CRUD、分页查询、成绩录入、统计报表、角色权限。
+
+用例设计方法：等价类划分、边界值分析、场景法、错误推测法、正交组合。
+
+## 用例执行报告
+
+<!-- 流水线首次跑通后替换为真实地址 -->
+Allure 报告：`https://angnury.github.io/student-manage-test/`
+
+## 说明
+
+被测系统为本人独立开发的学习项目，本仓库用于练习完整的测试工程流程：用例设计 → 自动化实现 → 缺陷管理 → 测试报告 → CI 流水线。
