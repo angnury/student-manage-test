@@ -34,7 +34,6 @@ class TestStudentCrud:
     @allure.story("新增")
     @allure.title("学号重复时返回业务错误，不允许覆盖")
     @pytest.mark.p1
-    @pytest.mark.xfail(reason="缺陷 D-003：Result.error(String) 走 500 通道，学号重复返回业务码 500 而非 400/409", strict=False)
     def test_add_duplicate(self, admin, env, temp_student):
         resp = StudentApi(admin, env).add({"sid": temp_student["sid"], **BASE})
         assert_biz(resp, 400)
@@ -63,7 +62,6 @@ class TestStudentCrud:
     @allure.story("删除")
     @allure.title("删除已有成绩的学生应成功，并级联清理成绩记录")
     @pytest.mark.p0
-    @pytest.mark.xfail(reason="缺陷 D-002：score 表外键 fk_score_student 未级联，删除返回 500 系统异常，学生删不掉", strict=False)
     def test_delete_student_with_score(self, admin, teacher, env, temp_student, course_id):
         ScoreApi(teacher, env).save(
             {"sid": temp_student["sid"], "cid": course_id, "term": "2025-2026-1", "usual": 80, "finalScore": 90}

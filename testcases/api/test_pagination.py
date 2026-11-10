@@ -18,14 +18,12 @@ class TestPagination:
 
     @allure.title("分页生效：每页返回条数不超过 size")
     @pytest.mark.p0
-    @pytest.mark.xfail(reason="缺陷 D-001：分页插件未注册，size=10 返回全表记录", strict=False)
     def test_size_applied(self, admin, env):
         body = StudentApi(admin, env).page(page=1, size=10).json()
         assert len(body["data"]["records"]) <= 10
 
     @allure.title("分页生效：total 等于真实记录总数")
     @pytest.mark.p0
-    @pytest.mark.xfail(reason="缺陷 D-001：未执行 COUNT 查询，total 恒为 0", strict=False)
     def test_total_is_real(self, admin, env, db):
         with db.cursor() as cur:
             cur.execute("SELECT COUNT(*) AS c FROM student")
@@ -35,7 +33,6 @@ class TestPagination:
 
     @allure.title("页码超界返回空列表而不是报错")
     @pytest.mark.p1
-    @pytest.mark.xfail(reason="缺陷 D-001：分页未生效，page=9999 仍返回全表", strict=False)
     def test_page_out_of_range(self, admin, env):
         body = StudentApi(admin, env).page(page=9999, size=10).json()
         assert body["code"] == 200
@@ -70,7 +67,6 @@ class TestPagination:
 
     @allure.title("参数类型错误：page 传非数字")
     @pytest.mark.p1
-    @pytest.mark.xfail(reason="缺陷 D-004：page 传非数字走全局兜底返回 500 系统异常，应返回参数错误", strict=False)
     def test_page_not_number(self, admin, env):
         body = StudentApi(admin, env).page(page="abc", size=10).json()
         assert body["code"] == 400, f"期望参数校验失败(400)，实际 {body['code']}"

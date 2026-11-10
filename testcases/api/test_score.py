@@ -69,7 +69,6 @@ class TestScoreValidation:
 
     @allure.title("分数超出 0-100 应被拒绝")
     @pytest.mark.p1
-    @pytest.mark.xfail(reason="已知缺陷：Service 未校验分数区间，传入 120 / -10 仍会写入并算出总分", strict=False)
     def test_score_out_of_range(self, teacher, env, temp_student, course_id):
         api = ScoreApi(teacher, env)
         payload = {"sid": temp_student["sid"], "cid": course_id, "term": "2025-2026-2", "usual": 120, "finalScore": -10}
