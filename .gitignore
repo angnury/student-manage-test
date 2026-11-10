@@ -8,7 +8,8 @@ venv/
 env/
 
 # ---- 测试产物 ----
-drivers/            # 本地浏览器驱动，体积大且按浏览器版本区分，不入库
+# 本地浏览器驱动：体积大且按浏览器版本区分，不入库
+drivers/
 allure-results/
 allure-report/
 logs/
