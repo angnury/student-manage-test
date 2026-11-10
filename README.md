@@ -54,16 +54,26 @@ docs/         用例库、测试报告、缺陷清单
 
 ## 用例概览
 
+共 38 条。当前执行结果：**31 passed / 7 xfailed**（xfailed 对应 `docs/缺陷清单.md` 里的 5 个缺陷）。
+
 | 文件 | 覆盖点 | 用例数 |
 |---|---|---|
 | `test_login.py` | 正常/密码错/用户不存在/字段缺失、token 可用性 | 6 |
-| `test_student_crud.py` | 增删改查、重复学号、学籍与账号的双向一致性 | 6 |
-| `test_pagination.py` | page/size 边界、模糊查询、参数类型异常 | 7 |
+| `test_student_crud.py` | 增删改查、重复学号、删除带成绩的学生、学籍与账号双向一致性 | 7 |
+| `test_pagination.py` | 分页生效性、page/size 边界、模糊查询、参数类型异常 | 9 |
 | `test_permission.py` | 无 token / 伪造 token / 三种角色越权矩阵 | 8 |
-| `test_score.py` | 总分计算、防改分、必填校验、分数越界 | 6 |
+| `test_score.py` | 总分计算、防改分、必填校验、分数越界 | 5 |
 | `test_statistics.py` | 概览、分数分布、班级平均分 | 3 |
 
-已知缺陷用 `@pytest.mark.xfail` 标注并在 reason 里写清楚，修复后会自动变成 XPASS 提醒你去删标记。
+已知缺陷用 `@pytest.mark.xfail` 标注并在 reason 里写明缺陷编号，修复后会自动变成 XPASS 提醒你去删标记。
+
+## 测试执行结论
+
+详见 [`docs/缺陷清单.md`](docs/缺陷清单.md)。本轮共记录 5 个缺陷，其中 2 个严重：
+
+- **D-001** 分页插件未注册，列表接口忽略 `page/size` 返回全表，`total` 恒为 0；
+- **D-002** 有成绩的学生无法删除（`score` 表外键未级联），接口返回 500 系统异常。
+
 
 ## 用例执行报告
 

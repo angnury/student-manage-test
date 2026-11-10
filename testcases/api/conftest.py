@@ -12,6 +12,28 @@ from utils.data_util import as_list, gen_sid
 BASE = yaml.safe_load((Path(__file__).parents[2] / "data" / "student.yaml").read_text(encoding="utf-8"))["valid"]
 
 
+def cleanup_student(api: StudentApi, sid: str, env):
+    """删除测试学生。接口删不掉时用 SQL 兜底，避免污染被测库。
+
+    已知缺陷 D-002：score 表外键未级联，有成绩的学生接口删不掉且返回 500。
+    """
+    resp = api.remove(sid)
+    if resp.status_code == 200 and resp.json().get("code") == 200:
+        return
+    try:
+        import pymysql
+
+        conn = pymysql.connect(**env["db"], charset="utf8mb4")
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM score WHERE sid = %s", (sid,))
+            cur.execute("DELETE FROM student WHERE sid = %s", (sid,))
+            cur.execute("DELETE FROM sys_user WHERE username = %s", (sid,))
+        conn.commit()
+        conn.close()
+    except Exception as exc:  # noqa: BLE001
+        print(f"[警告] 测试数据清理失败 {sid}：{exc}")
+
+
 @pytest.fixture
 def temp_student(admin, env):
     """建一条测试学生，用例结束无论成败都删除，避免污染数据。"""
@@ -20,7 +42,7 @@ def temp_student(admin, env):
     payload = {"sid": sid, **BASE}
     assert_biz(api.add(payload), 200)
     yield {"sid": sid, **BASE}
-    api.remove(sid)
+    cleanup_student(api, sid, env)
 
 
 @pytest.fixture(scope="session")

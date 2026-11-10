@@ -119,7 +119,11 @@ def db(env):
     """直连数据库的游标，用于校验接口落库结果。数据库不可达时整条链路跳过。"""
     pymysql = pytest.importorskip("pymysql", reason="未安装 pymysql")
     try:
-        conn = pymysql.connect(**env["db"], charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor)
+        # autocommit=True 很关键：否则 InnoDB 可重复读会让后续 SELECT 一直看会话开始时的快照，
+        # 用例刚插入的数据在断言里"查不到"，误报成数据没落库。
+        conn = pymysql.connect(
+            **env["db"], charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor, autocommit=True
+        )
     except Exception as exc:  # noqa: BLE001
         pytest.skip(f"数据库不可达，跳过落库校验：{exc}")
     yield conn
