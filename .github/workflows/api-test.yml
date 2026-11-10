@@ -1,0 +1,100 @@
+name: api-test
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # 每天 UTC 18:10 = 北京时间 02:10，避开整点高峰
+    - cron: "10 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: api-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 生成测试配置
+        env:
+          ADMIN_PWD: ${{ secrets.ADMIN_PASSWORD }}
+          TEACHER_PWD: ${{ secrets.TEACHER_PASSWORD }}
+          STUDENT_PWD: ${{ secrets.STUDENT_PASSWORD }}
+        run: |
+          mkdir -p config
+          cat > config/config.yaml <<EOF
+          prod:
+            base_url: "http://47.98.192.161"
+            admin:
+              username: "admin"
+              password: "${ADMIN_PWD:-123456}"
+            teacher:
+              username: "T001"
+              password: "${TEACHER_PWD:-123456}"
+            student:
+              username: "202401"
+              password: "${STUDENT_PWD:-123456}"
+          EOF
+          echo "配置已生成："
+          sed 's/password: ".*"/password: "***"/' config/config.yaml
+
+      - name: 执行接口测试
+        env:
+          TEST_ENV: prod
+        run: |
+          mkdir -p allure-results
+          pytest testcases/api -p no:cacheprovider
+
+      - name: 安装 Allure 并生成报告
+        if: always()
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq default-jre-headless
+          curl -sSL -o allure.tgz https://github.com/allure-framework/allure2/releases/download/2.29.0/allure-2.29.0.tgz
+          tar -zxf allure.tgz
+          if [ -d allure-results ] && [ -n "$(ls -A allure-results)" ]; then
+            ./allure-2.29.0/bin/allure generate allure-results -o allure-report --clean
+          else
+            echo "没有测试结果，生成空报告占位"
+            mkdir -p allure-report
+            echo "<h1>本次运行没有产生测试结果</h1>" > allure-report/index.html
+          fi
+
+      - name: 上传报告为构建产物
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: allure-report
+          retention-days: 30
+
+      - name: 发布到 GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: allure-report
+          commit_message: "docs: 更新测试报告 ${{ github.run_number }}"
+          force_orphan: true

@@ -118,6 +118,8 @@ def anon():
 def db(env):
     """直连数据库的游标，用于校验接口落库结果。数据库不可达时整条链路跳过。"""
     pymysql = pytest.importorskip("pymysql", reason="未安装 pymysql")
+    if "db" not in env:
+        pytest.skip(f"环境 {ENV_NAME} 未配置数据库连接（线上库不对外暴露），跳过落库校验")
     try:
         # autocommit=True 很关键：否则 InnoDB 可重复读会让后续 SELECT 一直看会话开始时的快照，
         # 用例刚插入的数据在断言里"查不到"，误报成数据没落库。

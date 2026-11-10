@@ -1,8 +1,12 @@
 # student-manage-test
 
+![api-test](https://github.com/angnury/student-manage-test/actions/workflows/api-test.yml/badge.svg)
+
 对个人项目 [student-manage-web](https://github.com/angnury/student-manage-web) 的**接口自动化 + UI 自动化测试工程**。
 
 被测系统是一套前后端分离的学生综合信息管理系统（Spring Boot 3 + Vue 3 + MySQL），本仓库只做测试，不含业务代码。
+
+**在线测试报告**：https://angnury.github.io/student-manage-test/ （每次推送与每日定时回归自动更新）
 
 ## 技术栈
 
