@@ -1,0 +1,33 @@
+# 登录用例数据。expect_http / expect_code 均按接口实际行为填写（先实测，再写预期）
+- case: 正常登录-admin
+  payload:
+    username: admin
+    password: "123456"
+  expect_http: 200
+  expect_code: 200
+
+- case: 密码错误
+  payload:
+    username: admin
+    password: "wrong_password_123"
+  expect_http: 401
+  expect_code: 401
+
+- case: 用户名不存在
+  payload:
+    username: "no_such_user"
+    password: "123456"
+  expect_http: 401
+  expect_code: 401
+
+- case: 缺少密码字段
+  payload:
+    username: admin
+  expect_http: 200
+  expect_code: 400
+
+- case: 缺少用户名字段
+  payload:
+    password: "123456"
+  expect_http: 200
+  expect_code: 400
