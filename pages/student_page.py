@@ -31,7 +31,7 @@ class StudentPage(BasePage):
 
     # ---------- 列表 ----------
 
-    def wait_loaded(self, timeout: int = 15):
+    def wait_loaded(self, timeout: int = 30):
         """等表格渲染出至少一行数据。"""
         self.visible(self.TABLE, timeout=timeout)
 

@@ -12,9 +12,11 @@
 """
 import os
 
+import allure
 import pytest
 import requests
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.edge.options import Options as EdgeOptions
 
@@ -34,7 +36,8 @@ def ui_base_url() -> str:
 def _require_frontend(ui_base_url):
     """前端没起就把整组 UI 用例标记为跳过，而不是让每条用例各报一次连接错误。"""
     try:
-        requests.get(ui_base_url, timeout=3)
+        # 线上站点跨境访问首包可能较慢，探测超时给到 20 秒，避免误判成"服务没起"
+        requests.get(ui_base_url, timeout=20)
     except Exception:  # noqa: BLE001
         pytest.skip(f"前端服务未启动（{ui_base_url}），UI 用例跳过。先执行：npm run dev")
 
@@ -69,9 +72,14 @@ def _new_driver():
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--lang=zh-CN")
+    # 只等 DOM 就绪，不等图片等次要资源：跨境访问线上站点时能省一半时间
+    options.page_load_strategy = "eager"
     factory = webdriver.Chrome if UI_BROWSER == "chrome" else webdriver.Edge
     service = _driver_service(UI_BROWSER)
-    return factory(service=service, options=options) if service else factory(options=options)
+    browser = factory(service=service, options=options) if service else factory(options=options)
+    # 页面级超时单独放大：CI 跑在海外 runner，访问国内服务器首屏可能要 20s 以上
+    browser.set_page_load_timeout(60)
+    return browser
 
 
 @pytest.fixture
@@ -89,11 +97,28 @@ def login_page(driver, ui_base_url):
 
 @pytest.fixture
 def admin_page(driver, ui_base_url, env):
-    """以管理员身份登录，返回停留在工作台的 LoginPage（可继续链式跳转）。"""
-    page = LoginPage(driver, ui_base_url).open_login()
-    page.login(env["admin"]["username"], env["admin"]["password"])
-    page.wait_url_contains("/dashboard")
-    return page
+    """以管理员身份登录，返回停留在工作台的 LoginPage（可继续链式跳转）。
+
+    CI 跑在海外 runner 上访问国内服务器，首次加载经常要 15-25 秒；偶发超时时重试一次，
+    并把第一次失败的截图留档，避免"整组 UI 用例全 broken"却查不出原因。
+    """
+    page = LoginPage(driver, ui_base_url)
+    last_error = None
+    for attempt in range(2):
+        try:
+            page.open_login().login(env["admin"]["username"], env["admin"]["password"])
+            page.wait_url_contains("/dashboard", timeout=30)
+            return page
+        except TimeoutException as exc:
+            last_error = exc
+            try:
+                driver.save_screenshot(f"screenshots/login_attempt{attempt + 1}.png")
+                allure.attach(driver.get_screenshot_as_png(),
+                              name=f"第 {attempt + 1} 次登录失败现场",
+                              attachment_type=allure.attachment_type.PNG)
+            except Exception:  # noqa: BLE001
+                pass
+    raise last_error
 
 
 @pytest.fixture
