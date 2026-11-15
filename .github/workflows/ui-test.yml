@@ -1,0 +1,101 @@
+name: ui-test
+
+# UI 自动化单独跑，不进每日定时流水线。
+# 原因：UI 用例必须打开真实浏览器访问线上站点，GitHub 海外 runner 到国内 2C2G 服务器
+# 拉 2.2MB 前端资源经常超时，属于环境不稳定，不是用例写错。日常回归用 api-test 保证信噪比，
+# 需要演示或排查 UI 时在这里手动点一次。
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "被测站点地址"
+        required: false
+        default: "http://47.98.192.161"
+
+permissions:
+  contents: read
+
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 生成测试配置
+        env:
+          ADMIN_PWD: ${{ secrets.ADMIN_PASSWORD }}
+          TEACHER_PWD: ${{ secrets.TEACHER_PASSWORD }}
+          STUDENT_PWD: ${{ secrets.STUDENT_PASSWORD }}
+        run: |
+          mkdir -p config
+          cat > config/config.yaml <<EOF
+          prod:
+            base_url: "${{ inputs.base_url }}"
+            admin:
+              username: "admin"
+              password: "${ADMIN_PWD:-123456}"
+            teacher:
+              username: "T001"
+              password: "${TEACHER_PWD:-123456}"
+            student:
+              username: "202401"
+              password: "${STUDENT_PWD:-123456}"
+          EOF
+
+      - name: 缓存浏览器驱动
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/selenium
+          key: selenium-${{ runner.os }}-${{ hashFiles('.github/workflows/ui-test.yml') }}
+          restore-keys: selenium-${{ runner.os }}-
+
+      - name: 预热站点
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -m 30 -o /dev/null -w "%{http_code}" "${{ inputs.base_url }}" || echo fail)
+            echo "预热第 $i 次：$code"
+            [ "$code" = "200" ] && break
+            sleep 5
+          done
+          # 顺便测一下前端主包大小与下载耗时，便于判断是网络问题还是页面问题
+          js=$(curl -s -m 30 "${{ inputs.base_url }}" | grep -oE 'assets/index-[^"]+\.js' | head -1)
+          if [ -n "$js" ]; then
+            curl -s -m 120 -o /dev/null -w "主包 $js 下载耗时 %{time_total}s，大小 %{size_download} 字节\n" \
+              "${{ inputs.base_url }}/$js"
+          fi
+
+      - name: 执行 UI 测试
+        env:
+          TEST_ENV: prod
+          UI_BROWSER: chrome
+          UI_HEADLESS: "1"
+          UI_BASE_URL: ${{ inputs.base_url }}
+        run: |
+          mkdir -p screenshots
+          pytest testcases/ui -p no:cacheprovider
+
+      - name: 上传报告与失败截图
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-result
+          path: |
+            allure-results
+            screenshots
+          retention-days: 14
+          if-no-files-found: ignore

@@ -112,8 +112,12 @@ set UI_HEADLESS=0 && pytest testcases/ui   # 有头模式，调试用
 
 **https://angnury.github.io/student-manage-test/**
 
-最近一次 CI 运行：**45 条用例 / 42 passed / 3 skipped / 0 failed**
-（接口 38 条 + UI 7 条，合并为一份 Allure 报告）
+CI 每次运行：**38 条接口用例 / 35 passed / 3 skipped / 0 failed**
+（3 条跳过的是需要直连数据库核对的落库校验，CI 环境连不到线上库）
+
+> **UI 用例（7 条）为什么不进每日流水线**：UI 必须打开真实浏览器访问线上站点，
+> GitHub 海外 runner 到国内 2G 服务器拉 2.2MB 前端主包经常超时，属于环境不稳定而非用例缺陷。
+> 日常回归用接口套件保证信噪比；要跑 UI 时手动触发 `ui-test` 工作流（Actions 页 → Run workflow）。
 
 > 3 条接口用例在 CI 中会 skip：它们是依赖数据库直连的落库校验，线上库的 3306 未对外开放。本地运行时这 3 条正常执行。
 
